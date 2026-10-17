@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 246 248 253; --fg: 14 20 56; --card: 255 255 255; --muted: 96 106 140;
+  --line: 220 226 242; --primary: 26 36 104; --accent: 43 143 214; --onp: 255 255 255;
+}
+.dark {
+  --bg: 9 13 36; --fg: 232 237 252; --card: 17 24 60; --muted: 148 160 200;
+  --line: 38 48 98; --primary: 120 178 242; --accent: 70 165 232; --onp: 9 13 36;
+}
+
+@layer base {
+  body { @apply bg-bg text-fg font-sans antialiased; }
+  h1, h2, h3 { @apply font-display tracking-tight; }
+  :focus-visible { outline: 3px solid rgb(var(--accent)); outline-offset: 2px; }
+}
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-primary { @apply bg-primary text-onp hover:opacity-90; }
+  .btn-ghost { @apply border border-line bg-card hover:border-accent; }
+  .btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
+  .card { @apply rounded-2xl border border-line bg-card; }
+  .input { @apply w-full rounded-xl border border-line bg-card px-3 py-2.5 text-fg placeholder:text-muted; }
+  .label { @apply mb-1 block text-sm font-semibold; }
+  .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold; }
+}
+
+/* Hero : orbites d'atome autour du logo */
+.orbit-wrap { position: relative; width: min(78vw, 360px); aspect-ratio: 1; }
+.orbit { position: absolute; inset: -14%; animation: spin 40s linear infinite; }
+.ring { position: absolute; inset: 0; border: 1.5px solid rgb(var(--accent) / .55); border-radius: 50%; }
+.ring::after { content: ''; position: absolute; top: -5px; left: 50%; width: 10px; height: 10px; border-radius: 50%; background: rgb(var(--accent)); }
+.ring-1 { transform: scaleY(.36); }
+.ring-2 { transform: rotate(60deg) scaleY(.36); }
+.ring-3 { transform: rotate(120deg) scaleY(.36); }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .orbit { animation: none; } }
