@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ⚠️ Domaine de la fac : remplace `true` par ex. email().matches('.*@univ-exemple[.]fr')
+    function domainOk() { return true; }
+    function signedIn() { return request.auth != null && domainOk(); }
+    function uid() { return request.auth.uid; }
+    function email() { return request.auth.token.email; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(email()));
+    }
+    function appsOpen() {
+      let s = get(/databases/$(database)/documents/settings/applications);
+      return exists(/databases/$(database)/documents/settings/applications) && s.data.open == true;
+    }
+
+    match /users/{u} {
+      allow read: if signedIn() && (uid() == u || isAdmin());
+      allow create: if signedIn() && uid() == u && request.resource.data.role == 'etudiant';
+      allow update: if signedIn() && uid() == u && request.resource.data.role == resource.data.role;
+      allow delete: if isAdmin();
+    }
+
+    match /admins/{e} {
+      allow read: if signedIn() && (email() == e || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    match /events/{id} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (signedIn() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['registeredCount']));
+    }
+
+    match /registrations/{id} {
+      allow read: if signedIn() && (resource == null || resource.data.userId == uid() || isAdmin());
+      allow create: if signedIn() && request.resource.data.userId == uid()
+        && id == request.resource.data.eventId + '_' + uid();
+      allow delete: if signedIn() && (resource.data.userId == uid() || isAdmin());
+    }
+
+    match /discounts/{id} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /news/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /members/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
+
+    match /applications/{id} {
+      allow read: if signedIn() && (resource == null || resource.data.userId == uid() || isAdmin());
+      // Une seule candidature par période : l'id = periodId_uid
+      allow create: if signedIn() && appsOpen()
+        && request.resource.data.userId == uid()
+        && request.resource.data.email == email()
+        && request.resource.data.status == 'en_attente'
+        && id == get(/databases/$(database)/documents/settings/applications).data.periodId + '_' + uid();
+      allow update, delete: if isAdmin();
+    }
+
+    match /ideas/{id} {
+      allow read: if signedIn() && (resource.data.userId == uid() || isAdmin());
+      allow create: if signedIn() && request.resource.data.userId == uid();
+      allow delete: if isAdmin();
+    }
+  }
+}
